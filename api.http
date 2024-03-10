@@ -1,0 +1,13 @@
+POST http://localhost:8080//transactions/new
+Content-Type: application/x-www-form-urlencoded
+
+sender = "sdfssfdsfx34524x532" &
+recipient = "43c2x325x2x5x34k32kkx53k" &
+amount: 5
+
+
+###
+GET http://localhost:8080/mine
+Accept: application/json
+
+###

@@ -16,20 +16,19 @@ type Blockchain struct {
 }
 
 func NewBlockchain() *Blockchain {
-	return &Blockchain{
-		Chain:               make([]Block, 0),
-		CurrentTransactions: make([]Transaction, 0),
+	blockchain := &Blockchain{
+		Chain:               []Block{},
+		CurrentTransactions: []Transaction{},
 	}
+	blockchain.NewBlock(100)
+	return blockchain
 }
 
 func (bc *Blockchain) NewBlock(proof int64) Block {
-	return bc.newBlock(proof, "")
+	return bc.newBlock(proof, "1")
 }
 
 func (bc *Blockchain) LastBlock() *Block {
-	if len(bc.Chain) == 0 {
-		return nil
-	}
 	return &bc.Chain[len(bc.Chain)-1]
 }
 
@@ -45,22 +44,20 @@ func (bc *Blockchain) newBlock(proof int64, previousHash string) Block {
 		proof:        proof,
 		previousHash: previousHash,
 	}
-
-	bc.CurrentTransactions = nil
-
 	bc.Chain = append(bc.Chain, block)
-
+	bc.CurrentTransactions = []Transaction{}
 	return block
 }
 
-func (bc *Blockchain) NewTransaction(sender string, recipient string, amount int64) int64 {
+func (bc *Blockchain) NewTransaction(amount int64, recipient string, sender string) int64 {
 	bc.CurrentTransactions = append(bc.CurrentTransactions, Transaction{
 		sender:    sender,
 		recipient: recipient,
 		amount:    amount,
 	})
+	lastTransactionId := bc.LastBlock()
+	return lastTransactionId.id + 1
 
-	return bc.LastBlock().id + 1
 }
 
 func (bc *Blockchain) Hash(block Block) string {
@@ -98,5 +95,5 @@ func (bc *Blockchain) ValidProof(lastProof, proof int64) bool {
 	guess := fmt.Sprintf("%d %d", lastProof, proof)
 	guessHash := sha256.Sum256([]byte(guess))
 	guessHashStr := hex.EncodeToString(guessHash[:])
-	return guessHashStr[:4] == "0000"
+	return guessHashStr[:5] == "00000"
 }

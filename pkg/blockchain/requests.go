@@ -3,7 +3,6 @@ package blockchain
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -13,7 +12,9 @@ func (bc *Blockchain) GetNewTransaction(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	index := bc.NewTransaction(transaction.amount, transaction.recipient, transaction.sender)
+	fmt.Printf("%v", transaction)
+	fmt.Printf("%v", "!!!!!!!")
+	index := bc.NewTransaction(transaction.Amount, transaction.Recipient, transaction.Sender)
 	message := fmt.Sprintf("Transaction added to the block %d", index)
 	c.JSON(http.StatusCreated, gin.H{"message": message})
 }
@@ -22,7 +23,7 @@ func (bc *Blockchain) Mine(c *gin.Context) {
 	lastBlock := bc.LastBlock()
 	lastProof := lastBlock.proof
 	proof := bc.ProofOfWork(lastProof)
-	bc.NewTransaction(1, uuid.New().String(), "0")
+	bc.NewTransaction(1, NodeIdentifier, "0")
 
 	previousHash := bc.Hash(*lastBlock)
 	block := bc.newBlock(proof, previousHash)
@@ -30,15 +31,16 @@ func (bc *Blockchain) Mine(c *gin.Context) {
 	var transactions []gin.H
 	for _, transaction := range block.transactions {
 		transactions = append(transactions, gin.H{
-			"amount":    transaction.amount,
-			"recipient": transaction.recipient,
-			"sender":    transaction.sender,
+			"amount":    transaction.Amount,
+			"recipient": transaction.Recipient,
+			"sender":    transaction.Sender,
 		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "New Block Forged",
-		"index":        block.id,
+		"id":           block.id,
+		"timestamp":    block.timestamp,
 		"transactions": transactions,
 		"proof":        block.proof,
 		"previousHash": block.previousHash,
@@ -51,13 +53,14 @@ func (bc *Blockchain) GetChain(c *gin.Context) {
 		var transactions []gin.H
 		for _, transaction := range block.transactions {
 			transactions = append(transactions, gin.H{
-				"amount":    transaction.amount,
-				"recipient": transaction.recipient,
-				"sender":    transaction.sender,
+				"amount":    transaction.Amount,
+				"recipient": transaction.Recipient,
+				"sender":    transaction.Sender,
 			})
 		}
 		blocks = append(blocks, gin.H{
 			"id":           block.id,
+			"timestamp":    block.timestamp,
 			"transactions": transactions,
 			"proof":        block.proof,
 			"previousHash": block.previousHash,

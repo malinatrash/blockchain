@@ -11,21 +11,21 @@ import (
 )
 
 type Blockchain struct {
-	Chain               []Block
-	CurrentTransactions []Transaction
+	Chain              []Block
+	PoolOfTransactions []Transaction
 }
 
 func NewBlockchain() *Blockchain {
 	blockchain := &Blockchain{
-		Chain:               []Block{},
-		CurrentTransactions: []Transaction{},
+		Chain:              []Block{},
+		PoolOfTransactions: []Transaction{},
 	}
 	blockchain.NewBlock(100)
 	return blockchain
 }
 
 func (bc *Blockchain) NewBlock(proof int64) Block {
-	return bc.newBlock(proof, "1")
+	return bc.newBlock(proof, "")
 }
 
 func (bc *Blockchain) LastBlock() *Block {
@@ -40,21 +40,22 @@ func (bc *Blockchain) newBlock(proof int64, previousHash string) Block {
 	block := Block{
 		id:           int64(len(bc.Chain) + 1),
 		timestamp:    time.Now().Format(time.RFC3339),
-		transactions: bc.CurrentTransactions,
+		transactions: bc.PoolOfTransactions,
 		proof:        proof,
 		previousHash: previousHash,
 	}
 	bc.Chain = append(bc.Chain, block)
-	bc.CurrentTransactions = []Transaction{}
+	bc.PoolOfTransactions = []Transaction{}
 	return block
 }
 
 func (bc *Blockchain) NewTransaction(amount int64, recipient string, sender string) int64 {
-	bc.CurrentTransactions = append(bc.CurrentTransactions, Transaction{
-		sender:    sender,
-		recipient: recipient,
-		amount:    amount,
+	bc.PoolOfTransactions = append(bc.PoolOfTransactions, Transaction{
+		Sender:    sender,
+		Recipient: recipient,
+		Amount:    amount,
 	})
+	fmt.Printf("%v ", bc.PoolOfTransactions)
 	lastTransactionId := bc.LastBlock()
 	return lastTransactionId.id + 1
 
@@ -72,7 +73,7 @@ func (bc *Blockchain) Hash(block Block) string {
 		case "transactions":
 			transactionString := ""
 			for _, tx := range block.transactions {
-				transactionString += tx.sender + tx.recipient + strconv.FormatInt(tx.amount, 10)
+				transactionString += tx.Sender + tx.Recipient + strconv.FormatInt(tx.Amount, 10)
 			}
 			blockString += transactionString
 		default:
@@ -95,5 +96,5 @@ func (bc *Blockchain) ValidProof(lastProof, proof int64) bool {
 	guess := fmt.Sprintf("%d %d", lastProof, proof)
 	guessHash := sha256.Sum256([]byte(guess))
 	guessHashStr := hex.EncodeToString(guessHash[:])
-	return guessHashStr[:5] == "00000"
+	return guessHashStr[:1] == "0"
 }

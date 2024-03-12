@@ -24,15 +24,15 @@ jobs:
       - name: Install application dependencies
         run: go mod tidy
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: malinatrash/blockchain:latest
-        env:
-          DOCKER_USERNAME: malinatrash
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_TOKEN }}
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v2
+      #   with:
+      #     context: .
+      #     push: true
+      #     tags: malinatrash/blockchain:latest
+      #   env:
+      #     DOCKER_USERNAME: malinatrash
+      #     DOCKER_PASSWORD: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master

@@ -18,11 +18,14 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Build
-        run: go build -v ./cmd/main.go
+      - name: Build Docker image
+        run: docker build -t blockchain .
 
-      - name: Install application dependencies
-        run: go mod tidy
+      - name: Push Docker image to registry
+        run: |
+          docker login -u malinatrash -p ${{ secrets.DOCKER_TOKEN }}
+          docker tag blockchain https://hub.docker.com/repository/docker/malinatrash/blockchain
+          docker push https://hub.docker.com/repository/docker/malinatrash/blockchain
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
@@ -31,9 +34,6 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            sudo apt update
-            sudo apt install -y golang git
-            source ~/.profile
-            cd ./blockchain
-            git pull origin master || git clone https://github.com/malinatrash/blockchain .
-            go run ./cmd
+            ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+            docker pull https://hub.docker.com/repository/docker/malinatrash/blockchain
+            docker run -d -p 8080:8080 https://hub.docker.com/repository/docker/malinatrash/blockchain

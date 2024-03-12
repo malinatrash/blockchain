@@ -29,7 +29,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: malinatrash/your-image-name:latest
+          tags: malinatrash/blockchain:latest
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_TOKEN }}

@@ -42,6 +42,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            sudo apt-get update && sudo apt-get install -y golang
             cd ./blockchain
             git pull origin master || git clone https://github.com/malinatrash/blockchain .
             go run ./cmd

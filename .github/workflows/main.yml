@@ -24,14 +24,14 @@ jobs:
       - name: Install application dependencies
         run: go mod tidy
 
-      - name: Build and push Docker image (optional)
+      - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: your-docker-username/your-image-name:latest
+          tags: malinatrash/your-image-name:latest
 
-      - name: Deploy to VPS (example using SSH)
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}

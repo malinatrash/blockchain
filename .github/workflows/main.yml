@@ -30,6 +30,9 @@ jobs:
           context: .
           push: true
           tags: malinatrash/your-image-name:latest
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master

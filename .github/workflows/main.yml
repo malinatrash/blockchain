@@ -24,6 +24,7 @@ jobs:
       - name: Install application dependencies
         run: go mod tidy
 
+      # Commented out Docker build and push steps
       # - name: Build and push Docker image
       #   uses: docker/build-push-action@v2
       #   with:
@@ -41,7 +42,6 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-#            source ~/.profile
             cd ./blockchain
             git pull origin master || git clone https://github.com/malinatrash/blockchain .
             go run ./cmd

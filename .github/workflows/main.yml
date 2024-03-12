@@ -1,0 +1,48 @@
+name: Go CI/CD
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.22'
+
+      - name: Build
+        run: go build -v ./../../cmd/main.go
+
+      - name: Test
+        run: go test -v ./../../cmd/main.go
+
+      - name: Install application dependencies
+        run: go mod tidy
+
+      - name: Build and push Docker image (optional)
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: your-docker-username/your-image-name:latest
+
+      - name: Deploy to VPS (example using SSH)
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/your/go/app
+            sudo systemctl stop your-app.service
+            git pull origin main
+            go build -o your-app-name
+            sudo systemctl start your-app.service

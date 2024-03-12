@@ -41,6 +41,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+#            source ~/.profile
             cd ./blockchain
-            git pull origin main || git clone https://github.com/malinatrash/blockchain .
+            git pull origin master || git clone https://github.com/malinatrash/blockchain .
             go run ./cmd

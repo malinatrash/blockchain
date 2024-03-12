@@ -19,10 +19,10 @@ jobs:
           go-version: '1.22'
 
       - name: Build
-        run: go build -v ./../../cmd/main.go
+        run: go build -v ./cmd
 
       - name: Test
-        run: go test -v ./../../cmd/main.go
+        run: go test -v ./cmd
 
       - name: Install application dependencies
         run: go mod tidy
@@ -41,8 +41,8 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /path/to/your/go/app
-            sudo systemctl stop your-app.service
+            cd ./
+            sudo systemctl stop blockchain.service
             git pull origin main
-            go build -o your-app-name
-            sudo systemctl start your-app.service
+            go build blockchain
+            sudo systemctl start blockchain.service

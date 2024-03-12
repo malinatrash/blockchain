@@ -12,8 +12,6 @@ func (bc *Blockchain) GetNewTransaction(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Printf("%v", transaction)
-	fmt.Printf("%v", "!!!!!!!")
 	index := bc.NewTransaction(transaction.Amount, transaction.Recipient, transaction.Sender)
 	message := fmt.Sprintf("Transaction added to the block %d", index)
 	c.JSON(http.StatusCreated, gin.H{"message": message})

@@ -14,7 +14,7 @@ func main() {
 	router.GET("/mine", bc.Mine)
 	router.GET("/chain", bc.GetChain)
 
-	err := router.Run(":8001")
+	err := router.Run(":8080")
 	if err != nil {
 		return
 	}

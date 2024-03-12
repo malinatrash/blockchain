@@ -31,7 +31,7 @@ jobs:
           push: true
           tags: malinatrash/blockchain:latest
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_USERNAME: malinatrash
           DOCKER_PASSWORD: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Deploy to VPS

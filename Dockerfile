@@ -1,16 +1,27 @@
-# Build stage
-FROM golang:1.22 as builder
+# Stage 1: Build stage
+FROM golang:1.22 AS builder
+
+ENV GO111MODULE=on
 
 WORKDIR /app
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
 COPY . .
 
-RUN go build -o main ./cmd
+RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd
 
-# Final stage
-FROM debian:buster-slim
+FROM alpine:latest
 
-WORKDIR /app
+ENV GODEBUG="madvdontneed=1"
 
-COPY --from=builder /app/main /app/main
+RUN apk --no-cache add ca-certificates
 
-CMD ["/app/main"]
+WORKDIR /root/
+
+COPY --from=builder /app/main .
+
+CMD ["./main"]

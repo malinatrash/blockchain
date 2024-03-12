@@ -24,11 +24,6 @@ jobs:
       - name: Install application dependencies
         run: go mod tidy
 
-      - name: Install Go
-        run: |
-          sudo apt-get update && sudo apt-get install -y golang
-          echo "::add-path::/usr/lib/go-1.18/bin" # Add Go binary directory to PATH
-
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         with:
@@ -36,6 +31,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            source ~/.profile
             cd ./blockchain
             git pull origin master || git clone https://github.com/malinatrash/blockchain .
             go run ./cmd

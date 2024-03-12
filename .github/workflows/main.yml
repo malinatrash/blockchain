@@ -19,13 +19,12 @@ jobs:
           go-version: '1.22'
 
       - name: Build Docker image
-        run: docker build -t blockchain .
+        run: docker build -t malinatrash/blockchain .
 
       - name: Push Docker image to registry
         run: |
           docker login -u malinatrash -p ${{ secrets.DOCKER_TOKEN }}
-          docker tag blockchain https://hub.docker.com/repository/docker/malinatrash/blockchain
-          docker push https://hub.docker.com/repository/docker/malinatrash/blockchain
+          docker push malinatrash/blockchain
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
@@ -35,5 +34,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-            docker pull https://hub.docker.com/repository/docker/malinatrash/blockchain
-            docker run -d -p 8080:8080 https://hub.docker.com/repository/docker/malinatrash/blockchain
+            docker pull malinatrash/blockchain
+            docker run -d -p 8080:8080 malinatrash/blockchain

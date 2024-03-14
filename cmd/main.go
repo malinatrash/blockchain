@@ -8,11 +8,6 @@ import (
 func main() {
 
 	router := gin.Default()
-	bc := blockchain.NewBlockchain()
-
-	router.POST("/transactions/new", bc.GetNewTransaction)
-	router.GET("/mine", bc.Mine)
-	router.GET("/chain", bc.GetChain)
 
 	router.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -26,6 +21,12 @@ func main() {
 		}
 		c.Next()
 	})
+
+	bc := blockchain.NewBlockchain()
+
+	router.POST("/transactions/new", bc.GetNewTransaction)
+	router.GET("/mine", bc.Mine)
+	router.GET("/chain", bc.GetChain)
 
 	err := router.Run(":8080")
 	if err != nil {

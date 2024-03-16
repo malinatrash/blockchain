@@ -1,9 +1,15 @@
 package blockchain
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 func (bc *Blockchain) GetNewTransaction(c *gin.Context) {
@@ -97,11 +103,53 @@ func (bc *Blockchain) CreateWallet(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
+	//privateKeyFileName := "private_key.pem"
+	//err = WritePrivateKeyToFile(wallet.PrivateKey, privateKeyFileName)
+	//if err != nil {
+	//	c.JSON(http.StatusInternalServerError, gin.H{})
+	//	return
+	//}
+
+	//c.Header("Content-Description", "File Transfer")
+	//c.Header("Content-Disposition", "attachment; filename="+privateKeyFileName)
+	//c.Header("Content-Type", "application/octet-stream")
+	//c.Header("Content-Transfer-Encoding", "binary")
+	//c.Header("Expires", "0")
+	//c.Header("Cache-Control", "must-revalidate")
+	//c.Header("Pragma", "public")
+
+	c.JSON(http.StatusOK, gin.H{
 		"address":    wallet.Address,
-		"privateKey": wallet.PrivateKey,
-		"publicKey":  wallet.PublicKey,
+		"privateKey": x509.MarshalPKCS1PrivateKey(wallet.PrivateKey),
 	})
+	//filePath := filepath.Join(".", privateKeyFileName)
+	//c.File(filePath)
+}
+
+func WritePrivateKeyToFile(privateKey *rsa.PrivateKey, fileName string) error {
+	if privateKey == nil {
+		return errors.New("private key is nil")
+	}
+
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	block := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	}
+
+	filePath := filepath.Join(".", fileName)
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	err = pem.Encode(file, block)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (bc *Blockchain) Balance(address string) (*int64, error) {

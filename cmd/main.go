@@ -28,7 +28,7 @@ func main() {
 	router.GET("/mine", bc.Mine)
 	router.GET("/chain", bc.GetChain)
 	router.GET("/balance", bc.GetBalance)
-	router.POST("/wallet", bc.CreateWallet)
+	router.GET("/wallet", bc.CreateWallet)
 
 	err := router.Run(":8080")
 	if err != nil {

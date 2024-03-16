@@ -135,5 +135,5 @@ func (bc *Blockchain) ValidProof(lastProof, proof int64) bool {
 	guess := fmt.Sprintf("%d %d", lastProof, proof)
 	guessHash := sha256.Sum256([]byte(guess))
 	guessHashStr := hex.EncodeToString(guessHash[:])
-	return guessHashStr[:5] == "00000"
+	return guessHashStr[:6] == "000000"
 }

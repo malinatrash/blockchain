@@ -34,6 +34,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-            docker rm malinatrash/blockchain
+            docker ps -q --filter "name=malinatrash/blockchain" | xargs -r docker rm -f
             docker pull malinatrash/blockchain
             docker run -d -p 8080:8080 malinatrash/blockchain
+

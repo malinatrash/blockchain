@@ -34,8 +34,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-            docker stop blockchain_container >/dev/null 2>&1
-            docker rm blockchain_container >/dev/null 2>&1
+            CONTAINERS=$(docker ps -aq)
+            for CONTAINER in $CONTAINERS; do
+              NAME=$(docker inspect --format='{{.Name}}' $CONTAINER | sed 's@/@@')
+              if [ "$NAME" != "wg-easy" ]; then
+               docker stop $CONTAINER
+               docker rm -f $CONTAINER
+              fi
+            done
             docker pull malinatrash/blockchain
-            
             docker run -d -p 8080:8080 --name blockchain_container malinatrash/blockchain

@@ -1,18 +1,23 @@
 package blockchain
 
 import (
+	"crypto"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 )
 
 type Blockchain struct {
 	Chain              []Block
 	PoolOfTransactions []Transaction
+	mu                 sync.Mutex
 }
 
 func NewBlockchain() *Blockchain {
@@ -49,16 +54,50 @@ func (bc *Blockchain) newBlock(proof int64, previousHash string) Block {
 	return block
 }
 
-func (bc *Blockchain) NewTransaction(amount int64, recipient string, sender string) int64 {
-	bc.PoolOfTransactions = append(bc.PoolOfTransactions, Transaction{
-		Sender:    sender,
-		Recipient: recipient,
-		Amount:    amount,
-	})
-	fmt.Printf("%v ", bc.PoolOfTransactions)
-	lastTransactionId := bc.LastBlock()
-	return lastTransactionId.id + 1
+func (bc *Blockchain) NewTransaction(amount int64, recipient string, sender string) (*int64, error) {
+	if sender == "0" {
+		bc.PoolOfTransactions = append(bc.PoolOfTransactions, Transaction{
+			Sender:    sender,
+			Recipient: recipient,
+			Amount:    amount,
+			signature: "",
+		})
+	} else {
+		senderWallet, err := GetWallet(sender)
+		if err != nil {
+			return nil, fmt.Errorf("Sender does not exists")
+		}
+		_, err = GetWallet(recipient)
+		if err != nil {
+			return nil, fmt.Errorf("Recipient does not exists")
+		}
+		balance, err := bc.Balance(sender)
+		if err != nil {
+			return nil, fmt.Errorf("Sender does not exists")
+		}
+		if *balance < amount {
+			return nil, fmt.Errorf("Sender balance is lower than amount")
+		}
 
+		message := fmt.Sprintf("%d%s%s", amount, recipient, senderWallet.Address)
+		hashed := sha256.Sum256([]byte(message))
+
+		signature, err := rsa.SignPKCS1v15(rand.Reader, senderWallet.PrivateKey, crypto.SHA256, hashed[:])
+		if err != nil {
+			return nil, fmt.Errorf("Failed to sign transaction")
+		}
+
+		bc.PoolOfTransactions = append(bc.PoolOfTransactions, Transaction{
+			Sender:    senderWallet.Address,
+			Recipient: recipient,
+			Amount:    amount,
+			signature: string(signature),
+		})
+	}
+
+	lastTransactionId := bc.LastBlock()
+	newTransactionId := lastTransactionId.id + 1
+	return &newTransactionId, nil
 }
 
 func (bc *Blockchain) Hash(block Block) string {
@@ -96,5 +135,5 @@ func (bc *Blockchain) ValidProof(lastProof, proof int64) bool {
 	guess := fmt.Sprintf("%d %d", lastProof, proof)
 	guessHash := sha256.Sum256([]byte(guess))
 	guessHashStr := hex.EncodeToString(guessHash[:])
-	return guessHashStr[:1] == "0"
+	return guessHashStr[:5] == "00000"
 }

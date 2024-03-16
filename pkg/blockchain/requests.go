@@ -12,34 +12,53 @@ func (bc *Blockchain) GetNewTransaction(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	index := bc.NewTransaction(transaction.Amount, transaction.Recipient, transaction.Sender)
+	index, err := bc.NewTransaction(transaction.Amount, transaction.Recipient, transaction.Sender)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	message := fmt.Sprintf("Transaction added to the block %d", index)
 	c.JSON(http.StatusCreated, gin.H{"message": message})
 }
 
 func (bc *Blockchain) Mine(c *gin.Context) {
+	var Miner = c.Query("address")
+	if Miner == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid address",
+		})
+		return
+	}
+	_, err := bc.NewTransaction(1, Miner, "0")
+	if err != nil {
+		return
+	}
+
 	lastBlock := bc.LastBlock()
 	lastProof := lastBlock.proof
 	proof := bc.ProofOfWork(lastProof)
-	bc.NewTransaction(1, NodeIdentifier, "0")
 
 	previousHash := bc.Hash(*lastBlock)
+
 	block := bc.newBlock(proof, previousHash)
 
-	var transactions []gin.H
-	for _, transaction := range block.transactions {
-		transactions = append(transactions, gin.H{
-			"amount":    transaction.Amount,
-			"recipient": transaction.Recipient,
-			"sender":    transaction.Sender,
-		})
+	var transactions []Transaction
+	for _, transaction := range bc.PoolOfTransactions {
+		tx := Transaction{
+			Amount:    transaction.Amount,
+			Recipient: transaction.Recipient,
+			Sender:    transaction.Sender,
+		}
+		transactions = append(transactions, tx)
 	}
+
+	block.transactions = append(block.transactions, transactions...)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "New Block Forged",
 		"id":           block.id,
 		"timestamp":    block.timestamp,
-		"transactions": transactions,
+		"transactions": block.transactions,
 		"proof":        block.proof,
 		"previousHash": block.previousHash,
 	})
@@ -69,4 +88,52 @@ func (bc *Blockchain) GetChain(c *gin.Context) {
 		"chain":  blocks,
 		"length": len(bc.Chain),
 	})
+}
+
+func (bc *Blockchain) CreateWallet(c *gin.Context) {
+	wallet, err := GenerateWallet()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"address":    wallet.Address,
+		"privateKey": wallet.PrivateKey,
+		"publicKey":  wallet.PublicKey,
+	})
+}
+
+func (bc *Blockchain) Balance(address string) (*int64, error) {
+	if Wallets[address] == nil {
+		return nil, fmt.Errorf("Wallet is not exists")
+	}
+	balance := int64(0)
+
+	for _, block := range bc.Chain {
+		for _, transaction := range block.transactions {
+			if transaction.Sender == address {
+				balance -= transaction.Amount
+			}
+			if transaction.Recipient == address {
+				balance += transaction.Amount
+			}
+		}
+	}
+	return &balance, nil
+}
+
+func (bc *Blockchain) GetBalance(c *gin.Context) {
+	var address = c.Query("address")
+	balance, err := bc.Balance(address)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "wallet with this address does not exists",
+		})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"balance": balance,
+		})
+	}
 }

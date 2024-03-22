@@ -109,7 +109,6 @@ func (bc *Blockchain) CreateWallet(c *gin.Context) {
 	//	c.JSON(http.StatusInternalServerError, gin.H{})
 	//	return
 	//}
-
 	//c.Header("Content-Description", "File Transfer")
 	//c.Header("Content-Disposition", "attachment; filename="+privateKeyFileName)
 	//c.Header("Content-Type", "application/octet-stream")

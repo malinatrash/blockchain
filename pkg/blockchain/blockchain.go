@@ -10,14 +10,12 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"sync"
 	"time"
 )
 
 type Blockchain struct {
 	Chain              []Block
 	PoolOfTransactions []Transaction
-	mu                 sync.Mutex
 }
 
 func NewBlockchain() *Blockchain {

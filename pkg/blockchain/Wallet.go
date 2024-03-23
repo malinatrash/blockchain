@@ -8,12 +8,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type Wallet struct {
 	PrivateKey *rsa.PrivateKey `json:"privateKey"`
 	PublicKey  *rsa.PublicKey  `json:"publicKey"`
 	Address    string          `json:"address"`
+	TimeStamp  string          `json:"timeStamp"`
 }
 
 var Wallets map[string]*Wallet
@@ -29,9 +31,9 @@ func GenerateWallet() (*Wallet, error) {
 	}
 	publicKey := &privateKey.PublicKey
 	address := GenerateAddress(publicKey)
-	wallet := &Wallet{PrivateKey: privateKey, PublicKey: publicKey, Address: address}
+	wallet := &Wallet{PrivateKey: privateKey, PublicKey: publicKey, Address: address, TimeStamp: time.Now().Format(time.RFC3339)}
 	Wallets[address] = wallet
-	fmt.Printf("Создан новый кошелек:\nАдрес: %s\n", address)
+	fmt.Printf("Wallet %s created\n", address)
 	return wallet, nil
 }
 

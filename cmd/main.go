@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blockchain/internal/handlers"
 	"blockchain/pkg/blockchain"
 	"github.com/gin-gonic/gin"
 )
@@ -28,7 +29,11 @@ func main() {
 	router.GET("/mine", bc.Mine)
 	router.GET("/chain", bc.GetChain)
 	router.GET("/balance", bc.GetBalance)
-	router.GET("/wallet", bc.CreateWallet)
+
+	router.GET("/wallet", handlers.CreateWallet)
+	router.GET("/wallet/all", handlers.GetAllWallets)
+	router.GET("/wallet/download", handlers.DownloadPrivateKey)
+	router.POST("/wallet/get", handlers.GetWallet)
 
 	err := router.Run(":8080")
 	if err != nil {

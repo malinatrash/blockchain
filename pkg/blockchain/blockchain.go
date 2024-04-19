@@ -1,13 +1,17 @@
 package blockchain
 
 import (
+	"blockchain/pkg"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"time"
@@ -16,15 +20,91 @@ import (
 type Blockchain struct {
 	Chain              []Block
 	PoolOfTransactions []Transaction
+	Nodes              pkg.Set
 }
 
 func NewBlockchain() *Blockchain {
 	blockchain := &Blockchain{
 		Chain:              []Block{},
 		PoolOfTransactions: []Transaction{},
+		Nodes:              make(pkg.Set),
 	}
 	blockchain.NewBlock(100)
 	return blockchain
+}
+
+func (bc *Blockchain) RegisterNode(address string) error {
+	parsedURL, err := url.Parse(address)
+	if err != nil {
+		return err
+	}
+	if parsedURL.Host != "" {
+		bc.Nodes.Add(parsedURL.Host)
+	} else if parsedURL.Path != "" {
+		bc.Nodes.Add(parsedURL.Path)
+	} else {
+		return errors.New("invalid URL")
+	}
+	return nil
+}
+
+func (bc *Blockchain) ValidChain(chain []Block) bool {
+	lastBlock := chain[0]
+	currentIndex := 1
+
+	for currentIndex < len(chain) {
+		block := chain[currentIndex]
+
+		lastBlockHash := bc.Hash(lastBlock)
+		if block.PreviousHash != lastBlockHash {
+			return false
+		}
+
+		if !bc.ValidProof(lastBlock.Proof, block.Proof) {
+			return false
+		}
+
+		lastBlock = block
+		currentIndex++
+	}
+
+	return true
+}
+
+func (bc *Blockchain) ResolveConflicts() bool {
+	newChain := make([]Block, 0)
+
+	maxLength := len(bc.Chain)
+	for node := range bc.Nodes {
+		response, err := http.Get(fmt.Sprintf("http://%s/chain", node))
+		if err != nil {
+			continue
+		}
+		defer response.Body.Close()
+
+		if response.StatusCode == http.StatusOK {
+			var data struct {
+				Chain  []Block `json:"chain"`
+				Length int     `json:"length"`
+			}
+			if err := json.NewDecoder(response.Body).Decode(&data); err != nil {
+				fmt.Println("Error decoding JSON:", err)
+				return false
+			}
+
+			if data.Length > maxLength {
+				maxLength = data.Length
+				newChain = data.Chain
+			}
+		}
+	}
+
+	if len(newChain) > 0 {
+		bc.Chain = newChain
+		return true
+	}
+
+	return false
 }
 
 func (bc *Blockchain) NewBlock(proof int64) Block {
@@ -41,11 +121,11 @@ func (bc *Blockchain) NewBlockWithPreviousHash(proof int64, previousHash string)
 
 func (bc *Blockchain) newBlock(proof int64, previousHash string) Block {
 	block := Block{
-		id:           int64(len(bc.Chain) + 1),
-		timestamp:    time.Now().Format(time.RFC3339),
-		transactions: bc.PoolOfTransactions,
-		proof:        proof,
-		previousHash: previousHash,
+		ID:           int64(len(bc.Chain) + 1),
+		Timestamp:    time.Now().Format(time.RFC3339),
+		Transactions: bc.PoolOfTransactions,
+		Proof:        proof,
+		PreviousHash: previousHash,
 	}
 	bc.Chain = append(bc.Chain, block)
 	bc.PoolOfTransactions = []Transaction{}
@@ -63,18 +143,18 @@ func (bc *Blockchain) NewTransaction(amount int64, recipient string, sender stri
 	} else {
 		senderWallet, err := GetWallet(sender)
 		if err != nil {
-			return nil, fmt.Errorf("Sender does not exists")
+			return nil, fmt.Errorf("sender does not exists")
 		}
 		_, err = GetWallet(recipient)
 		if err != nil {
-			return nil, fmt.Errorf("Recipient does not exists")
+			return nil, fmt.Errorf("recipient does not exists")
 		}
 		balance, err := bc.Balance(sender)
 		if err != nil {
-			return nil, fmt.Errorf("Sender does not exists")
+			return nil, fmt.Errorf("sender does not exists")
 		}
 		if *balance < amount {
-			return nil, fmt.Errorf("Sender balance is lower than amount")
+			return nil, fmt.Errorf("sender balance is lower than amount")
 		}
 
 		message := fmt.Sprintf("%d%s%s", amount, recipient, senderWallet.Address)
@@ -82,7 +162,7 @@ func (bc *Blockchain) NewTransaction(amount int64, recipient string, sender stri
 
 		signature, err := rsa.SignPKCS1v15(rand.Reader, senderWallet.PrivateKey, crypto.SHA256, hashed[:])
 		if err != nil {
-			return nil, fmt.Errorf("Failed to sign transaction")
+			return nil, fmt.Errorf("failed to sign transaction")
 		}
 
 		bc.PoolOfTransactions = append(bc.PoolOfTransactions, Transaction{
@@ -94,22 +174,22 @@ func (bc *Blockchain) NewTransaction(amount int64, recipient string, sender stri
 	}
 
 	lastTransactionId := bc.LastBlock()
-	newTransactionId := lastTransactionId.id + 1
+	newTransactionId := lastTransactionId.ID + 1
 	return &newTransactionId, nil
 }
 
 func (bc *Blockchain) Hash(block Block) string {
 	blockJSON, _ := json.Marshal(block)
 	var keys []string
-	keys = append(keys, "id", "timestamp", "transactions", "proof", "previousHash")
+	keys = append(keys, "Id", "Timestamp", "Transactions", "Proof", "PreviousHash")
 	sort.Strings(keys)
 
 	blockString := ""
 	for _, k := range keys {
 		switch k {
-		case "transactions":
+		case "Transactions":
 			transactionString := ""
-			for _, tx := range block.transactions {
+			for _, tx := range block.Transactions {
 				transactionString += tx.Sender + tx.Recipient + strconv.FormatInt(tx.Amount, 10)
 			}
 			blockString += transactionString

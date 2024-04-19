@@ -35,7 +35,7 @@ func (bc *Blockchain) Mine(c *gin.Context) {
 	}
 
 	lastBlock := bc.LastBlock()
-	lastProof := lastBlock.proof
+	lastProof := lastBlock.Proof
 	proof := bc.ProofOfWork(lastProof)
 
 	previousHash := bc.Hash(*lastBlock)
@@ -52,15 +52,15 @@ func (bc *Blockchain) Mine(c *gin.Context) {
 		transactions = append(transactions, tx)
 	}
 
-	block.transactions = append(block.transactions, transactions...)
+	block.Transactions = append(block.Transactions, transactions...)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "New Block Forged",
-		"id":           block.id,
-		"timestamp":    block.timestamp,
-		"transactions": block.transactions,
-		"proof":        block.proof,
-		"previousHash": block.previousHash,
+		"Id":           block.ID,
+		"Timestamp":    block.Timestamp,
+		"Transactions": block.Transactions,
+		"Proof":        block.Proof,
+		"PreviousHash": block.PreviousHash,
 	})
 }
 
@@ -68,7 +68,7 @@ func (bc *Blockchain) GetChain(c *gin.Context) {
 	var blocks []gin.H
 	for _, block := range bc.Chain {
 		var transactions []gin.H
-		for _, transaction := range block.transactions {
+		for _, transaction := range block.Transactions {
 			transactions = append(transactions, gin.H{
 				"amount":    transaction.Amount,
 				"recipient": transaction.Recipient,
@@ -76,11 +76,11 @@ func (bc *Blockchain) GetChain(c *gin.Context) {
 			})
 		}
 		blocks = append(blocks, gin.H{
-			"id":           block.id,
-			"timestamp":    block.timestamp,
-			"transactions": transactions,
-			"proof":        block.proof,
-			"previousHash": block.previousHash,
+			"Id":           block.ID,
+			"Timestamp":    block.Timestamp,
+			"Transactions": transactions,
+			"Proof":        block.Proof,
+			"PreviousHash": block.PreviousHash,
 		})
 	}
 
@@ -97,7 +97,7 @@ func (bc *Blockchain) Balance(address string) (*int64, error) {
 	balance := int64(0)
 
 	for _, block := range bc.Chain {
-		for _, transaction := range block.transactions {
+		for _, transaction := range block.Transactions {
 			if transaction.Sender == address {
 				balance -= transaction.Amount
 			}

@@ -4,6 +4,8 @@ import (
 	"blockchain/internal/handlers"
 	"blockchain/pkg/blockchain"
 	"github.com/gin-gonic/gin"
+	"net"
+	"strconv"
 )
 
 func main() {
@@ -35,8 +37,26 @@ func main() {
 	router.GET("/wallet/download", handlers.DownloadPrivateKey)
 	router.POST("/wallet/get", handlers.GetWallet)
 
-	err := router.Run(":8080")
-	if err != nil {
-		return
+	router.POST("/nodes/register", func(c *gin.Context) {
+		handlers.RegisterNodes(c, bc)
+	})
+
+	router.GET("/nodes/resolve", func(c *gin.Context) {
+		handlers.ResolveNodes(c, bc)
+	})
+
+	for port := 8080; port <= 8090; port++ {
+		ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+		if err == nil {
+			err := ln.Close()
+			if err != nil {
+				return
+			}
+			err = router.Run(":" + strconv.Itoa(port))
+			if err != nil {
+				continue
+			}
+			break
+		}
 	}
 }

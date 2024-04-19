@@ -1,9 +1,9 @@
 package blockchain
 
 type Block struct {
-	id           int64
-	timestamp    string
-	transactions []Transaction
-	proof        int64
-	previousHash string
+	ID           int64         `json:"id"`
+	PreviousHash string        `json:"previousHash"`
+	Proof        int64         `json:"proof"`
+	Timestamp    string        `json:"timestamp"`
+	Transactions []Transaction `json:"transactions"`
 }
